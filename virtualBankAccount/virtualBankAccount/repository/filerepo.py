@@ -97,7 +97,7 @@ class FileRepository(Repository):
                     continue
                 if acc.user!=userName:
                     continue
-                res.append(acc)
+                res.append(accId)
         return res
 
     def saveTransaction(self,transaction: Transaction):

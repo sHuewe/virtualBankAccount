@@ -62,8 +62,7 @@ class A_BrokerTest(unittest.TestCase):
 
     def test_transfer_withFallback(self):
         self.broker.addValue("MASTER",1000)
-        sub1=self.broker.getAccountByName("Sub1")
-        self.broker.saveAccount(sub1.withPeriodicValue(-1,1))
+        self.broker.setDefaultAccount("Sub1")
         self.broker.transfer("MASTER")
         self.assertEqual(self.broker.getAccountByName("Sub1").value,1000)
         self.assertEqual(self.broker.getAccountByName("MASTER").value,1000)
@@ -72,9 +71,9 @@ class A_BrokerTest(unittest.TestCase):
 
     def test_transfer_withPeriod(self):
         self.broker.addValue("MASTER",1000)
-        for name,mValue in zip(["Sub1","Sub2","Sub3"],[-1,100,200]):
-            sub=self.broker.getAccountByName(name).withPeriodicValue(mValue,1,monthOffset=-1) #2 Payments should be made
-            self.broker.saveAccount(sub)
+        self.broker.setDefaultAccount("Sub1")
+        self.broker.setMonthlyPaiment("Sub2",100,monthOffset=-1)
+        self.broker.setMonthlyPaiment("Sub3",200,monthOffset=-1)
         self.broker.transfer("MASTER")
         self.assertEqual(self.broker.getAccountByName("Sub1").value,700)
         self.assertEqual(self.broker.getAccountByName("MASTER").value,1000)

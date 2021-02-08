@@ -57,3 +57,8 @@ class Account(jsonable):
             if isinstance(res["realAccount"],Account):
                 res["realAccount"]=self.realAccount._id
         return res
+
+    def toDisplayData(self):
+        res = super().toDisplayData()
+        res["lastModified"]=datetime.datetime.fromtimestamp(res["lastModified"])
+        return res

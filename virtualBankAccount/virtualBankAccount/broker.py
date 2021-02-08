@@ -37,6 +37,14 @@ class Broker:
             raise ValueError(f'Unable to save account with other user name than "{self.userName}"')
         self._repo.saveAccount(account)
 
+    def setMonthlyPaiment(self,accountName,value,nMonth=1,monthOffset=1):
+        acc=self._requireVirtual(accountName,"Monthly paiment only available for virtual accounts")
+        self.saveAccount(acc.withPeriodicValue(value,nMonth,monthOffset=monthOffset))
+
+    def setDefaultAccount(self,accountName):
+        acc=self._requireVirtual(accountName,"Require a virtual account")
+        self.saveAccount(acc.withPeriodicValue(-1,1))       
+
     def saveTransaction(self,transaction):
         if len(transaction.accounts)==0:
             return
@@ -83,7 +91,7 @@ class Broker:
 
     def getAccountsDf(self):
         accounts=self.getAccounts(userName=self.userName)
-        accounts=[a.toDisplayData() for a in accounts]
+        accounts=[self.getAccountById(a).toDisplayData() for a in accounts]
         return pd.DataFrame(accounts)[["name","lastModified","value"]]
 
     def addValue(self,accountName,valueToAdd,transaction: Transaction=None):
@@ -178,6 +186,20 @@ class Broker:
             res=account
         else:
             res=self.getAccountByName(account)
+        if res is None:
+            raise ValueError(f'Account "{account}" is not available')
         if res.isVirtual():
+            raise ValueError(msg)
+        return res
+
+    def _requireVirtual(self,account,msg):
+        res=None
+        if isinstance(account,Account):
+            res=account
+        else:
+            res=self.getAccountByName(account)
+        if res is None:
+            raise ValueError(f'Account "{account}" is not available')
+        if not res.isVirtual():
             raise ValueError(msg)
         return res
