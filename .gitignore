@@ -1,1 +1,6 @@
-__pycache__
+__pycache__/
+*.json
+.ipynb_checkpoints/
+.vscode/
+*.egg-info/
+
