@@ -74,7 +74,7 @@ class FileRepository(Repository):
         data=None
         if not os.path.exists(self.fileNameAccounts):
             return self.accounts
-        with open(self.fileNameAccounts) as f:
+        with open(self.fileNameAccounts,encoding="utf-8") as f:
             data = json.load(f)
         self.accounts={}
         self.accountIDs=[]
