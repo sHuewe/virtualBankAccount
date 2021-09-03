@@ -6,6 +6,7 @@ from dateutil.relativedelta import relativedelta
 import datetime
 
 import pandas as pd
+import numpy as np
 
 ADMIN_USER="admin"
 
@@ -94,7 +95,7 @@ class Broker:
         accounts=[self.getAccountById(a).toDisplayData() for a in accounts]
         return pd.DataFrame(accounts)[["name","lastModified","value"]]
 
-    def addValue(self,accountName,valueToAdd,transaction: Transaction=None):
+    def addValue(self,accountName,valueToAdd,transaction: Transaction=None, description= None):
         if valueToAdd == 0:
             return
         ac=self.getAccountByName(accountName)
@@ -103,10 +104,12 @@ class Broker:
         transActionCreated=transaction is None
         if transaction is None:
             if valueToAdd > 0:
-                description=f'Transfer to {accountName}'
+                descr=f'Transfer to {accountName}'
             else:
-                description=f'Remove from {accountName}'
-            transaction = Transaction(description=description,user=self.userName)
+                descr=f'Remove from {accountName}'
+            if description:
+                descr=f'{accountName}: {description}'
+            transaction = Transaction(description=descr,user=self.userName)
             
         if not ac.isVirtual() and valueToAdd<0:
             #Only possible if there is free money which is not transfered to virtual accounts
@@ -138,6 +141,32 @@ class Broker:
                 res.append(self.getAccountById(childId))
         return res
 
+    def getTransactionsForAccount(self,account=None,accountName=None):
+        if account is None and accountName is None:
+            raise ValueError("You have to provide an account or an account name")
+        if account is None:
+            account = self.getAccountByName(accountName)
+        res=[]
+        for tr in self.getTransactions(10000):
+            trAccountIDs=[a["id"] for a in tr.accounts]
+            if account._id in trAccountIDs:
+                res.append(tr)
+        return res
+
+    def getTransactionsForAccountDf(self,account=None,accountName=None):
+        if account is None and accountName is None:
+            raise ValueError("You have to provide an account or an account name")
+        if account is None:
+            account = self.getAccountByName(accountName)
+        transactions=self.getTransactionsForAccount(account=account)
+        transactionsD = [t.toDisplayData() for t in transactions]
+        for transaction, transactionRes in zip(transactions,transactionsD):
+            for acc in transaction.accounts:
+                if acc["id"] == account._id:
+                    transactionRes["value"]=acc["value"]
+                    transactionRes["change"]=acc["change"]
+        return pd.DataFrame(transactionsD)[["date","description","accounts","change","value"]]
+
     def transfer(self,accountName):
         ac=self._requireReal(accountName,"Transfer can only be used for a real account to transfer to the virtual childs")
         transaction =Transaction(description=f'Transfer money from {ac.name} to childs',user=self.userName)
@@ -159,7 +188,7 @@ class Broker:
             virtualValue+=childAccount.value
         if len(accountWaiting)>0:
             print(f'Following accounts wait for paiment: {[a.name for a in accountWaiting]}')
-        if totalValue == virtualValue :
+        if np.abs(totalValue - virtualValue) < 0.01 :
             print("All money was transfered before")
         else:
             freeMoney=totalValue-virtualValue
