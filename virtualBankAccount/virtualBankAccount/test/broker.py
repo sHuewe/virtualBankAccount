@@ -52,6 +52,20 @@ class A_BrokerTest(unittest.TestCase):
         self.assertEqual(self.broker.getAccountByName("Sub3").value,0)
 
 
+    def test_negative_value(self):
+        self.broker.addValue("Sub1",1000)
+        self.broker.addValue("Sub2",100)
+        self.assertEqual(self.broker.getAccountByName("Sub1").value,1000)
+        self.assertEqual(self.broker.getAccountByName("MASTER").value,1100)
+        self.assertEqual(self.broker.getAccountByName("Sub2").value,100)
+        self.assertEqual(self.broker.getAccountByName("Sub3").value,0)
+        self.broker.addValue("Sub2",-500)
+        self.assertEqual(self.broker.getAccountByName("Sub1").value,1000)
+        self.assertEqual(self.broker.getAccountByName("MASTER").value,600)
+        self.assertEqual(self.broker.getAccountByName("Sub2").value,-400)
+        self.assertEqual(self.broker.getAccountByName("Sub3").value,0)        
+
+
     def test_transfer_no_config(self):
         self.broker.addValue("MASTER",1000)
         self.broker.transfer("MASTER")
